@@ -7,6 +7,8 @@ use AlibabaCloud\Client\Exception\ClientException;
 use AlibabaCloud\Client\Exception\ServerException;
 //常量设置
 define("RRKey","axiba"); //要修改的主机记录
+// php /volume1/9G/www/DDNS/DDNS.php
+// chmod +x /volume1/9G/www/DDNS/DDNS.php
 
 //参与主逻辑的方法：
 //GetIP() //获取本机公网IP
@@ -19,23 +21,25 @@ DoMain();
 //主逻辑
 function DoMain()
 {
+    echo 1;
     $myip = GetIP(); //本机公网IP
 
     //判断当前公网IP是否和上次修改的解析地址
     if(IsSame($myip)){
-        return "当前公网IP是否和上次修改的解析地址一样";
+        echo "当前公网IP和上次修改的解析地址一样";
+        return "当前公网IP和上次修改的解析地址一样";
     }
-
+    echo 2;
     //公网IP和上次修改的解析地址不一致，再进行获取当前解析地址
     $alibabaArr = GetAlibabaIP(); //获取当前解析记录
     $alibabaIP = $alibabaArr["DomainRecords"]["Record"][0]["Value"]; //当前解析IP
     $alibabaRecordId = $alibabaArr["DomainRecords"]["Record"][0]["RecordId"]; //当前解析RecordId
-
+    echo 3;
     //公网IP和当前解析地址的比较
     if($alibabaIP == $myip){
         return "公网IP和当前解析地址一样";
     }
-
+    echo 4;
     //如果公网IP和当前解析不一样，则修改解析记录
     return SetIP($myip, $alibabaRecordId, RRKey);
 }
@@ -58,7 +62,7 @@ function GetIP()
     );
     //随机用一个接口，直到获取到返回值为止
     while (!isset($ip) || empty($ip)) {
-        $ip = GetIPCommon($urlArr[rand(0, 10)]);
+        $ip = GetIPCommon($urlArr[rand(0, 9)]);
     }
     //提取出接口返回的字符串中的IP地址
     $preg = '/(\d{1,3}\.){3}\d{1,3}/';
@@ -77,7 +81,7 @@ function GetIPCommon($url)
         $ip = curl_exec($my_curl);
         curl_close($my_curl);
         if (!isset($ip) || empty($ip)) {
-            throw new Exception("");
+            return null;
         }
         return $ip;
     } catch (\Throwable $th) {
@@ -119,19 +123,39 @@ function GetAlibabaIP()
 
 //判断指定IP是否和上次修改的解析地址一样(如果在修改方法中，成功修改了解析地址，则修改的解析地址将存入ip.txt)
 function IsSame($ip){
-    $file_path = "ip.txt";
+    $file_path = dirname(__FILE__)."/ip.txt";
+    echo $file_path;
     if(file_exists($file_path)){
     $str = file_get_contents($file_path);//将整个文件内容读入到一个字符串中
     $str = str_replace("\r\n","<br />",$str);
     }
+    // $con = mysqli_connect('127.0.0.1','root','ilikecs123!','test','3307');
+    // // 检测连接
+    // if ($con->connect_error) {
+    //     die("连接失败: " . $con->connect_error);
+    // } 
+
+    // $result = $con->query("SELECT * FROM ip");
+    // if ($result->num_rows > 0) {
+    //     // 输出数据
+    //     while($row = $result->fetch_assoc()) {
+    //         $str = $row["ip"];
+    //     }
+    // } else {
+    //     echo "0 结果";
+    // }
+
     if($str == $ip)
     {
+        echo $str;
+        echo $ip;
         return true;
     }
     else
     {
         return false;
     }
+    // $con->close();
 }
 
 //调用阿里云API修改解析记录
@@ -167,17 +191,37 @@ function APIIP($ip, $Record)
 //修改解析记录并保存进ip.txt
 function SetIP($ip, $Record){
     if (count(APIIP($ip, $Record)) > 1) {
-        $fp = fopen("ip.txt", "w"); //文件被清空后再写入
+        // $con=mysqli_connect("127.0.0.1","root","ilikecs123!","test",'3307');
+        // // 检测连接
+        // if (mysqli_connect_errno())
+        // {
+        //     echo "连接失败: " . mysqli_connect_error();
+        // }
+
+        // mysqli_query($con,"UPDATE ip SET ip=$ip");
+
+        // mysqli_close($con);
+        echo 5;
+        $file_path = dirname(__FILE__)."/ip.txt";
+        $fp = fopen($file_path, "w"); //文件被清空后再写入
         if ($fp) {
             $flag = fwrite($fp, $ip);
-            return true;
             if (!$flag) {
-                return false;
+                echo "写入文件失败<br>";
+            }
+            else{
+                echo $ip;
             }
         }
         fclose($fp);
+
+        $myfile = fopen($file_path, "w") or die("Unable to open file!");
+        fwrite($myfile, $ip);
+        echo $file_path;
+        fclose($myfile);
     }
     else {
+        echo 6;
         return false;
     }
     
