@@ -21,27 +21,27 @@ DoMain();
 //主逻辑
 function DoMain()
 {
-    echo 1;
+    echo "...开始侏罗纪...";
     $myip = GetIP(); //本机公网IP
 
     //判断当前公网IP是否和上次修改的解析地址
     if(IsSame($myip)){
-        echo "当前公网IP和上次修改的解析地址一样";
+        echo "...当前公网IP和txt的解析地址一样...";
         return "当前公网IP和上次修改的解析地址一样";
     }
-    echo 2;
+    echo "...当前公网IP和txt解析地址不一样...";
     //公网IP和上次修改的解析地址不一致，再进行获取当前解析地址
     $alibabaArr = GetAlibabaIP(); //获取当前解析记录
     $alibabaIP = $alibabaArr["DomainRecords"]["Record"][0]["Value"]; //当前解析IP
     $alibabaRecordId = $alibabaArr["DomainRecords"]["Record"][0]["RecordId"]; //当前解析RecordId
-    echo 3;
     //公网IP和当前解析地址的比较
     if($alibabaIP == $myip){
+        echo "...公网IP和当前解析地址一样...";
         return "公网IP和当前解析地址一样";
     }
-    echo 4;
+    echo "...公网IP和当前解析地址不一样，开始解析IP...";
     //如果公网IP和当前解析不一样，则修改解析记录
-    return SetIP($myip, $alibabaRecordId, RRKey);
+    return SetIP($myip, $alibabaRecordId);
 }
 
 //获取公网IP主方法，随机使用接口获取IP，直到获取到为止
@@ -66,6 +66,7 @@ function GetIP()
     }
     //提取出接口返回的字符串中的IP地址
     $preg = '/(\d{1,3}\.){3}\d{1,3}/';
+    $matches = null;
     preg_match($preg, $ip, $matches);
     //返回最终的公网IP地址
     return $matches[0];
@@ -108,6 +109,7 @@ function GetAlibabaIP()
                     'DomainName' => "idnmd.top",
                     'PageNumber' => "1",
                     'RRKeyWord' => RRKey,
+                    'TypeKeyWord' => "A",
                 ],
             ])
             ->request();
@@ -201,7 +203,7 @@ function SetIP($ip, $Record){
         // mysqli_query($con,"UPDATE ip SET ip=$ip");
 
         // mysqli_close($con);
-        echo 5;
+        echo "...IP解析成功，开始文件写入...";
         $file_path = dirname(__FILE__)."/ip.txt";
         $fp = fopen($file_path, "w"); //文件被清空后再写入
         if ($fp) {
@@ -210,6 +212,7 @@ function SetIP($ip, $Record){
                 echo "写入文件失败<br>";
             }
             else{
+                echo "...写入文件成功...";
                 echo $ip;
             }
         }
@@ -221,7 +224,7 @@ function SetIP($ip, $Record){
         fclose($myfile);
     }
     else {
-        echo 6;
+        echo "...IP解析失败...";
         return false;
     }
     
